@@ -1,98 +1,62 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Link } from "expo-router";
+import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { ProductSummary } from "../../src/features/shopify/types";
+import { useShopifyCatalog } from "../../src/features/shopify/use-shopify-catalog";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+function ProductCard({ product }: { product: ProductSummary }) {
+  return (
+    <Link href={{ pathname: "/product/[handle]", params: { handle: product.handle } }} asChild>
+      <View style={styles.card}>
+        {product.imageUrl ? <Image source={{ uri: product.imageUrl }} style={styles.image} /> : <View style={styles.imageFallback} />}
+        <Text style={styles.title}>{product.title}</Text>
+        <Text style={styles.price}>{"$"}{product.price}</Text>
+      </View>
+    </Link>
+  );
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { data, loading, error, refresh } = useShopifyCatalog();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <Text style={styles.heading}>Featured products</Text>
+        <Text style={styles.subheading}>Live data from your Shopify store</Text>
+      </View>
+
+      {loading ? <ActivityIndicator style={styles.loader} /> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <ProductCard product={item} />}
+        contentContainerStyle={styles.list}
+        onRefresh={refresh}
+        refreshing={loading}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safe: { flex: 1, backgroundColor: "#f8fafc" },
+  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  heading: { fontSize: 24, fontWeight: "700", color: "#0f172a" },
+  subheading: { marginTop: 4, color: "#334155", fontSize: 13 },
+  loader: { marginTop: 12 },
+  error: { color: "#b91c1c", paddingHorizontal: 16, marginBottom: 8 },
+  list: { padding: 12, gap: 12 },
+  card: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+    overflow: "hidden"
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  image: { width: "100%", height: 180, backgroundColor: "#e2e8f0" },
+  imageFallback: { width: "100%", height: 180, backgroundColor: "#e2e8f0" },
+  title: { fontSize: 16, fontWeight: "600", color: "#0f172a", paddingHorizontal: 12, paddingTop: 10 },
+  price: { fontSize: 14, color: "#334155", paddingHorizontal: 12, paddingVertical: 10 }
 });
